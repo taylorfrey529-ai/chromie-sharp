@@ -37,11 +37,11 @@ Chromie# is the private-realm launcher and lifecycle manager for the ChromieCraf
 
 ## M3 — Strict Launch Pipeline
 
-- [ ] build 12340 verification
-- [ ] authenticated X11 display probe
-- [ ] Wine runtime validation from Workbench, not PATH alone
+- [x] build 12340 verification from persisted runtime manifest
+- [x] authenticated X11 positive/negative authorization probe
+- [x] Workbench-native Wine/client preflight and 32-bit bootstrap
 - [ ] DXVK validation
-- [ ] realmlist validation
+- [x] realmlist validation and guarded local configuration
 - [ ] genuine current-runtime client launch gate
 - [ ] launcher minimize/tray transition after confirmed launch
 
