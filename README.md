@@ -22,7 +22,7 @@ M2 introduces the Battle.net-style launcher shell and PLAY/REPAIR lifecycle cont
 - non-destructive repair planning
 - dependency-light console client retained as a diagnostic fallback
 
-Strict Wine/DXVK, authenticated X11, realmlist and build-12340 launch gates are M3 and are not silently treated as passed.
+M3 adds strict Build 12340 identity, Workbench-native Wine preflight/bootstrap, authenticated X11 positive/negative probes, realmlist validation, and post-start auth/world listener checks. DXVK-specific and genuine current-runtime launch evidence remain pending.
 
 ## Run backend
 
