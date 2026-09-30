@@ -72,7 +72,7 @@ class LauncherTests(unittest.TestCase):
             "STATE=\"$(dirname \"$0\")/running\"\n"
             "case \"$1\" in\n"
             "status) [ -f \"$STATE\" ] && { echo 'authserver running'; echo 'worldserver running'; exit 0; }; echo stopped; exit 3;;\n"
-            "preflight) echo 'preflight=ready'; exit 0;;\n"
+            "preflight) for d in dbc maps vmaps mmaps; do [ -d \"$(dirname \"$0\")/state/data/$d\" ] || exit 2; done; echo 'preflight=ready'; exit 0;;\n"
             "start|restart) : > \"$STATE\"; echo started;;\n"
             "stop) rm -f \"$STATE\"; echo stopped;;\n"
             "*) exit 64;; esac\n",
