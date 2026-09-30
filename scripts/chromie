@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+CMD=${1:-status}
+API_URL=${CHROMIE_API_URL:-http://127.0.0.1:5290/api/v1/}
+if command -v dotnet >/dev/null 2>&1; then
+  CHROMIE_API_URL="$API_URL" exec dotnet run --project "$ROOT/src/ChromieSharp.Console/ChromieSharp.Console.csproj" -- "$CMD"
+fi
+printf '%s\n' "dotnet is not installed; use the HTTP API directly or run ./scripts/chromie-backend" >&2
+exit 69

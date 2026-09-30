@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chromie-sharp.local/protocol/chromie-api-v1.schema.json",
+  "title": "Chromie# API v1 envelope",
+  "type": "object",
+  "required": ["request_id", "timestamp", "operation", "success", "error_code", "message", "data"],
+  "properties": {
+    "request_id": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "operation": { "type": "string", "minLength": 1 },
+    "success": { "type": "boolean" },
+    "error_code": { "type": ["string", "null"] },
+    "message": { "type": ["string", "null"] },
+    "data": {}
+  },
+  "additionalProperties": false
+}
