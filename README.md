@@ -1,55 +1,61 @@
 # Chromie#
 
-Chromie# is a local-first control plane for a ChromieCraft / TrinityCore 3.3.5a private-server workbench.
+Chromie# is a local-first desktop launcher and lifecycle manager for a ChromieCraft / TrinityCore 3.3.5a private-server Workbench.
 
-The design deliberately wraps the existing emulator/runtime instead of forking TrinityCore internals:
+```text
+C# Avalonia Launcher -> Chromie# Protocol -> Python Control Plane -> TrinityCore / MariaDB / Wine -> ChromieCraft
+```
 
-`C# operator frontend -> Chromie# protocol -> Python control plane -> TrinityCore / MariaDB / Wine -> ChromieCraft`
+Chromie# wraps the existing emulator/runtime boundary instead of forking TrinityCore internals.
 
 ## Current milestone
 
-This repository implements the M0 architecture and the first M1 headless vertical slice:
+M2 introduces the Battle.net-style launcher shell and PLAY/REPAIR lifecycle contract:
 
-- loopback-only Python API (`127.0.0.1` by default)
-- versioned `/api/v1` protocol
-- Workbench discovery without assuming an ephemeral mount exists
-- database reachability probe without exposing credentials
-- `server.sh` status/start/stop/restart adapter
-- ChromieCraft client preflight and guarded launch adapter
-- structured request IDs and machine-readable errors
-- dependency-light .NET 10 operator console
-- Python contract tests using a fake Workbench
-- CI for Python tests and .NET 10 compilation
+- loopback-only Python API by default
+- `/api/v1/launcher/status`
+- `/api/v1/launcher/play`
+- `/api/v1/launcher/repair`
+- ordered realm-start -> client-launch pipeline
+- cross-platform .NET 10 / Avalonia desktop launcher
+- Workbench, database, authserver, worldserver, client, runtime and display status cards
+- non-destructive repair planning
+- dependency-light console client retained as a diagnostic fallback
 
-Live TrinityCore/client gates are not considered passed unless the real Workbench is mounted and probed in the current runtime.
+Strict Wine/DXVK, authenticated X11, realmlist and build-12340 launch gates are M3 and are not silently treated as passed.
 
-## Run the backend
+## Run backend
 
 ```bash
 ./scripts/chromie-backend
 ```
 
-Environment overrides:
+Defaults:
 
-```bash
-CHROMIE_WORKBENCH_ROOT=/mnt/data/workspace/wow-private-server \
-CHROMIE_API_HOST=127.0.0.1 \
-CHROMIE_API_PORT=5290 \
-./scripts/chromie-backend
+```text
+API:       http://127.0.0.1:5290/api/v1/
+Workbench: /mnt/data/workspace/wow-private-server
+Display:   :88
 ```
 
-## Use the C# operator console
+## Run desktop launcher
+
+```bash
+dotnet run --project src/ChromieSharp.Launcher/ChromieSharp.Launcher.csproj
+```
+
+Set `CHROMIE_API_URL` to override the API base URL.
+
+## Diagnostic console
 
 ```bash
 dotnet run --project src/ChromieSharp.Console/ChromieSharp.Console.csproj -- status
 ```
 
-Commands: `health`, `status`, `start`, `stop`, `restart`, `preflight`, `launch`, `logs`.
+## Safety defaults
 
-## Security defaults
-
-- management API binds to loopback only by default
-- database credentials are not required for the M1 reachability probe and are never logged
-- frontend never shells directly into TrinityCore
-- mutation commands are executed only by the Python control plane
-- missing runtime components are reported as missing rather than reconstructed implicitly
+- management API binds to loopback by default
+- C# never executes TrinityCore shell commands directly
+- repair planning is non-destructive in M2
+- missing runtime components are reported, not recreated implicitly
+- live launch gates are never marked passed from mocks
