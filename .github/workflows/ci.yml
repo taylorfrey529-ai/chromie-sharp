@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Compile Python
+        run: python -m compileall -q backend/chromie_backend backend/tests
+      - name: Test Python control plane
+        env:
+          PYTHONPATH: backend
+        run: python -m unittest discover -s backend/tests -v
+
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build .NET operator console
+        run: dotnet build src/ChromieSharp.Console/ChromieSharp.Console.csproj -c Release --nologo
