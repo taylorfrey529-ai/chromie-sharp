@@ -60,3 +60,12 @@ Before PLAY is enabled, Chromie# now requires current evidence for the persisted
 Realmlist state is visible but can be prepared by the launch pipeline. PLAY verifies the Wine 32-bit bootstrap, configures the realmlist only when needed, starts the realm, waits for loopback auth/world listeners at 3724 and 8085, then invokes `client.sh launch`.
 
 A fake runtime can validate control-flow and security invariants in CI, but it never marks the genuine current-runtime launch gate passed.
+
+
+## M3.1 readiness sequencing
+
+A stopped database is a normal pre-launch state, not a repair condition. Launcher status therefore reports MariaDB as non-blocking standby when it is not reachable; `server.sh start` owns starting the database and both TrinityCore daemons.
+
+Before PLAY is enabled, Chromie# now requires `server.sh preflight` to pass. That preflight proves the prepared database state, TrinityCore configs, and canonical `dbc/maps/vmaps/mmaps` data are present. DXVK is also a separate blocking gate through `client.sh dxvk-check`.
+
+This prevents a lifecycle deadlock where PLAY required MariaDB to be running even though PLAY itself is responsible for starting it.
