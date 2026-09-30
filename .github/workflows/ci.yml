@@ -18,6 +18,20 @@ jobs:
         env:
           PYTHONPATH: backend
         run: python -m unittest discover -s backend/tests -v
+      - name: Stage Chromie# backend artifact
+        run: |
+          mkdir -p artifacts/chromie-backend
+          cp -a backend/chromie_backend artifacts/chromie-backend/
+          cp -a protocol artifacts/chromie-backend/
+          cp scripts/chromie-backend artifacts/chromie-backend/
+          printf '%s\n' "$GITHUB_SHA" > artifacts/chromie-backend/GIT-COMMIT
+      - name: Upload Chromie# backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromie-backend-${{ github.sha }}
+          path: artifacts/chromie-backend
+          if-no-files-found: error
+          retention-days: 7
 
   dotnet:
     runs-on: ubuntu-latest
@@ -30,3 +44,23 @@ jobs:
         run: dotnet build src/ChromieSharp.Console/ChromieSharp.Console.csproj -c Release --nologo
       - name: Build Chromie# launcher
         run: dotnet build src/ChromieSharp.Launcher/ChromieSharp.Launcher.csproj -c Release --nologo
+      - name: Publish Linux launcher artifact
+        run: |
+          mkdir -p artifacts
+          dotnet publish src/ChromieSharp.Launcher/ChromieSharp.Launcher.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained false \
+            --nologo \
+            -o artifacts/launcher-linux-x64
+          tar -czf artifacts/chromie-sharp-launcher-linux-x64.tar.gz -C artifacts/launcher-linux-x64 .
+          sha256sum artifacts/chromie-sharp-launcher-linux-x64.tar.gz > artifacts/chromie-sharp-launcher-linux-x64.tar.gz.sha256
+      - name: Upload Linux launcher artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromie-launcher-linux-x64-${{ github.sha }}
+          path: |
+            artifacts/chromie-sharp-launcher-linux-x64.tar.gz
+            artifacts/chromie-sharp-launcher-linux-x64.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7
