@@ -95,11 +95,13 @@ public sealed class MainWindow : Window
         {
             ("workbench", "Workbench"),
             ("database", "MariaDB"),
+            ("server_data", "Server Runtime / Data"),
             ("authserver", "Auth Server"),
             ("worldserver", "World Server"),
             ("client", "ChromieCraft Client"),
             ("build", "Build 12340"),
             ("runtime", "Wine Runtime"),
+            ("dxvk", "DXVK"),
             ("display", "Authenticated Display"),
             ("realmlist", "Local Realm"),
         })
