@@ -62,6 +62,12 @@ class ControlPlaneTests(unittest.TestCase):
         wow = self.root / "client" / "ChromieCraft_3.3.5a" / "Wow.exe"
         wow.parent.mkdir(parents=True)
         wow.write_bytes(b"MZ-fake")
+        wine = self.root / "runtime" / "wine-11.18-staging-amd64-wow64" / "bin" / "wine"
+        wine.parent.mkdir(parents=True)
+        wine.write_text("#!/bin/sh\necho wine-11.18\n", encoding="utf-8")
+        os.chmod(wine, 0o755)
+        dxvk = self.root / "runtime" / "dxvk-3.1.1"
+        dxvk.mkdir(parents=True)
 
     def request(self, path: str, method: str = "GET") -> tuple[int, dict]:
         req = Request(self.base + path, method=method, headers={"X-Request-Id": "test-request"})
@@ -100,6 +106,16 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertEqual(200, code)
         self.assertTrue(payload["success"])
         self.assertTrue(payload["data"]["wow_exe"].endswith("Wow.exe"))
+
+    def test_status_prefers_workbench_runtime_paths(self) -> None:
+        code, payload = self.request("/status")
+        self.assertEqual(200, code)
+        self.assertEqual("available", payload["data"]["wine"]["state"])
+        self.assertEqual("workbench", payload["data"]["wine"]["evidence"]["source"])
+        self.assertTrue(payload["data"]["wine"]["evidence"]["path"].endswith("/runtime/wine-11.18-staging-amd64-wow64/bin/wine"))
+        self.assertEqual("available", payload["data"]["dxvk"]["state"])
+        self.assertEqual("workbench", payload["data"]["dxvk"]["evidence"]["source"])
+        self.assertTrue(payload["data"]["dxvk"]["evidence"]["path"].endswith("/runtime/dxvk-3.1.1"))
 
 
 class MissingWorkbenchTests(unittest.TestCase):
