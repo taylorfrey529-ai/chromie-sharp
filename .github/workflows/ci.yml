@@ -50,7 +50,7 @@ jobs:
           dotnet publish src/ChromieSharp.Launcher/ChromieSharp.Launcher.csproj \
             -c Release \
             -r linux-x64 \
-            --self-contained false \
+            --self-contained true \
             --nologo \
             -o artifacts/launcher-linux-x64
           tar -czf artifacts/chromie-sharp-launcher-linux-x64.tar.gz -C artifacts/launcher-linux-x64 .
