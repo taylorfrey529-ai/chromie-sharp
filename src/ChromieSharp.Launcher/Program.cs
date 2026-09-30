@@ -98,8 +98,10 @@ public sealed class MainWindow : Window
             ("authserver", "Auth Server"),
             ("worldserver", "World Server"),
             ("client", "ChromieCraft Client"),
-            ("runtime", "Wine / DXVK"),
-            ("display", "Display"),
+            ("build", "Build 12340"),
+            ("runtime", "Wine Runtime"),
+            ("display", "Authenticated Display"),
+            ("realmlist", "Local Realm"),
         })
         {
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 4) };
@@ -139,7 +141,7 @@ public sealed class MainWindow : Window
         panel.Children.Add(new TextBlock { Text = "SERVER", Opacity = 0.65 });
         panel.Children.Add(new TextBlock { Text = "REPAIR", Opacity = 0.65 });
         panel.Children.Add(new TextBlock { Text = "SETTINGS", Opacity = 0.65 });
-        panel.Children.Add(new TextBlock { Text = "Chromie# 0.2-dev", Margin = new Thickness(0, 28, 0, 0), Opacity = 0.55 });
+        panel.Children.Add(new TextBlock { Text = "Chromie# 0.3-dev", Margin = new Thickness(0, 28, 0, 0), Opacity = 0.55 });
         panel.Children.Add(_backend);
         return new Border { Child = panel, Padding = new Thickness(0, 4), CornerRadius = new CornerRadius(0) };
     }
@@ -187,7 +189,7 @@ public sealed class MainWindow : Window
     {
         _mode.Text = snapshot.Mode;
         _summary.Text = snapshot.CanPlay
-            ? "Core gates pass. Chromie# can start the realm and launch the client."
+            ? "Strict launch gates pass. Chromie# can start the realm and launch the client."
             : $"Repair required: {string.Join(", ", snapshot.RepairReasons)}";
         _play.Content = snapshot.CanPlay ? "PLAY" : "REPAIR REQUIRED";
         _play.IsEnabled = snapshot.CanPlay;

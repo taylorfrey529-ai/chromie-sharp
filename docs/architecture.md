@@ -51,3 +51,12 @@ M2 repair is deliberately diagnostic and non-destructive. `/api/v1/launcher/repa
 ## Evidence rule
 
 A successful button press, HTTP 200, or fake Workbench test is not proof of a live TrinityCore/ChromieCraft launch. Live gates require current-runtime evidence from the actual Workbench.
+
+
+## M3 strict validation
+
+Before PLAY is enabled, Chromie# now requires current evidence for the persisted ChromieCraft build identity, the Workbench-native client/Wine preflight, and authenticated X11 access. X11 validation uses the Workbench authority file without reading or logging cookie bytes: an authorized `xdpyinfo` probe must pass, an explicitly empty authority probe must fail, and a second authorized probe must still pass.
+
+Realmlist state is visible but can be prepared by the launch pipeline. PLAY verifies the Wine 32-bit bootstrap, configures the realmlist only when needed, starts the realm, waits for loopback auth/world listeners at 3724 and 8085, then invokes `client.sh launch`.
+
+A fake runtime can validate control-flow and security invariants in CI, but it never marks the genuine current-runtime launch gate passed.

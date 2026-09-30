@@ -8,6 +8,7 @@ from .diagnostics_service import DiagnosticsService
 from .launcher_service import LauncherService
 from .server_service import ServerService
 from .status_service import StatusService
+from .validation_service import LaunchValidationService
 from .workbench import WorkbenchLocator
 
 
@@ -18,7 +19,8 @@ def build_services(settings: Settings) -> Services:
     client = ClientService(locator, settings.display)
     status = StatusService(locator, database, server, client, settings.display)
     diagnostics = DiagnosticsService(settings.workbench_root)
-    launcher = LauncherService(status, server, client)
+    validator = LaunchValidationService(locator, settings.display)
+    launcher = LauncherService(status, server, client, validator)
     return Services(status=status, server=server, client=client, diagnostics=diagnostics, launcher=launcher)
 
 
