@@ -40,8 +40,10 @@ Chromie# is the private-realm launcher and lifecycle manager for the ChromieCraf
 - [x] build 12340 verification from persisted runtime manifest
 - [x] authenticated X11 positive/negative authorization probe
 - [x] Workbench-native Wine/client preflight and 32-bit bootstrap
-- [ ] DXVK validation
+- [x] DXVK payload validation
 - [x] realmlist validation and guarded local configuration
+- [x] server runtime/data preflight gate
+- [x] stopped MariaDB treated as PLAY-managed standby
 - [ ] genuine current-runtime client launch gate
 - [ ] launcher minimize/tray transition after confirmed launch
 
