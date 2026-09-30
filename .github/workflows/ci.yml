@@ -26,5 +26,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Build .NET operator console
+      - name: Build .NET diagnostic console
         run: dotnet build src/ChromieSharp.Console/ChromieSharp.Console.csproj -c Release --nologo
+      - name: Build Chromie# launcher
+        run: dotnet build src/ChromieSharp.Launcher/ChromieSharp.Launcher.csproj -c Release --nologo
