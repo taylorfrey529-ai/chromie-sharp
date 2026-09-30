@@ -10,6 +10,7 @@ import uuid
 
 from .client_service import ClientService
 from .diagnostics_service import DiagnosticsService
+from .launcher_service import LauncherService
 from .models import OperationResult, utc_now
 from .server_service import ServerService
 from .status_service import StatusService
@@ -21,6 +22,7 @@ class Services:
     server: ServerService
     client: ClientService
     diagnostics: DiagnosticsService
+    launcher: LauncherService
 
 
 def envelope(request_id: str, operation: str, success: bool, *, data: Any = None, error_code: str | None = None, message: str | None = None) -> dict[str, Any]:
@@ -37,7 +39,7 @@ def envelope(request_id: str, operation: str, success: bool, *, data: Any = None
 
 def build_server(host: str, port: int, services: Services) -> ThreadingHTTPServer:
     class Handler(BaseHTTPRequestHandler):
-        server_version = "ChromieSharp/0.1"
+        server_version = "ChromieSharp/0.2"
 
         def log_message(self, fmt: str, *args: object) -> None:
             return
@@ -56,7 +58,17 @@ def build_server(host: str, port: int, services: Services) -> ThreadingHTTPServe
 
         def _result(self, request_id: str, operation: str, result: OperationResult) -> None:
             status = HTTPStatus.OK if result.ok else HTTPStatus.CONFLICT
-            self._send(status, envelope(request_id, operation, result.ok, data=result.evidence, error_code=None if result.ok else result.code, message=result.message))
+            self._send(
+                status,
+                envelope(
+                    request_id,
+                    operation,
+                    result.ok,
+                    data=result.evidence,
+                    error_code=None if result.ok else result.code,
+                    message=result.message,
+                ),
+            )
 
         def do_GET(self) -> None:  # noqa: N802
             request_id = self._request_id()
@@ -66,6 +78,8 @@ def build_server(host: str, port: int, services: Services) -> ThreadingHTTPServe
                 self._send(HTTPStatus.OK, envelope(request_id, "health", True, data={"service": "chromie_backend", "version": "v1"}))
             elif path == "/api/v1/status":
                 self._send(HTTPStatus.OK, envelope(request_id, "status", True, data=services.status.snapshot().to_dict()))
+            elif path == "/api/v1/launcher/status":
+                self._send(HTTPStatus.OK, envelope(request_id, "launcher.status", True, data=services.launcher.status()))
             elif path == "/api/v1/client/preflight":
                 self._result(request_id, "client.preflight", services.client.preflight())
             elif path == "/api/v1/logs":
@@ -76,7 +90,10 @@ def build_server(host: str, port: int, services: Services) -> ThreadingHTTPServe
                     lines = 100
                 self._send(HTTPStatus.OK, envelope(request_id, "logs", True, data=services.diagnostics.tail(lines)))
             else:
-                self._send(HTTPStatus.NOT_FOUND, envelope(request_id, "unknown", False, error_code="NOT_FOUND", message="Unknown endpoint"))
+                self._send(
+                    HTTPStatus.NOT_FOUND,
+                    envelope(request_id, "unknown", False, error_code="NOT_FOUND", message="Unknown endpoint"),
+                )
 
         def do_POST(self) -> None:  # noqa: N802
             request_id = self._request_id()
@@ -93,7 +110,14 @@ def build_server(host: str, port: int, services: Services) -> ThreadingHTTPServe
                 self._result(request_id, "client.preflight", services.client.preflight())
             elif path == "/api/v1/client/launch":
                 self._result(request_id, "client.launch", services.client.launch())
+            elif path == "/api/v1/launcher/play":
+                self._result(request_id, "launcher.play", services.launcher.play())
+            elif path == "/api/v1/launcher/repair":
+                self._result(request_id, "launcher.repair", services.launcher.repair_plan())
             else:
-                self._send(HTTPStatus.NOT_FOUND, envelope(request_id, "unknown", False, error_code="NOT_FOUND", message="Unknown endpoint"))
+                self._send(
+                    HTTPStatus.NOT_FOUND,
+                    envelope(request_id, "unknown", False, error_code="NOT_FOUND", message="Unknown endpoint"),
+                )
 
     return ThreadingHTTPServer((host, port), Handler)

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import subprocess
-
 from .models import ComponentState, OperationResult
 from .workbench import WorkbenchLocator
 
@@ -25,12 +23,7 @@ class ClientService:
             missing.append("Wow.exe")
         if missing:
             return OperationResult(False, "CLIENT_PREFLIGHT_FAILED", "ChromieCraft client preflight failed", {"missing": missing})
-        return OperationResult(
-            True,
-            "OK",
-            "ChromieCraft client preflight passed",
-            {"client_script": str(self.locator.client_script), "wow_exe": str(wow), "display": self.display},
-        )
+        return OperationResult(True, "OK", "ChromieCraft client preflight passed", {"client_script": str(self.locator.client_script), "wow_exe": str(wow), "display": self.display})
 
     def state(self) -> ComponentState:
         if self._process is not None:
@@ -53,16 +46,16 @@ class ClientService:
         env = os.environ.copy()
         env["DISPLAY"] = self.display
         try:
-            stream = log_path.open("a", encoding="utf-8")
-            self._process = subprocess.Popen(
-                [str(self.locator.client_script), "launch"],
-                cwd=str(self.locator.root),
-                env=env,
-                text=True,
-                stdout=stream,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-            )
+            with log_path.open("a", encoding="utf-8") as stream:
+                self._process = subprocess.Popen(
+                    [str(self.locator.client_script), "launch"],
+                    cwd=str(self.locator.root),
+                    env=env,
+                    text=True,
+                    stdout=stream,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
         except OSError as exc:
             return OperationResult(False, "CLIENT_LAUNCH_EXEC_ERROR", str(exc), {"path": str(self.locator.client_script)})
         return OperationResult(True, "OK", "ChromieCraft client launch requested", {"pid": self._process.pid, "log": str(log_path)})

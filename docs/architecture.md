@@ -1,36 +1,53 @@
 # Chromie# architecture
 
-## Boundary
+## Product boundary
 
-Chromie# is a control plane, not a TrinityCore fork.
-
-- **C#** owns operator interaction.
-- **Python** owns orchestration, process execution, probing, policy, and future audit enforcement.
-- **TrinityCore / MariaDB / Wine / ChromieCraft** remain authoritative runtime components.
-
-The C# layer never invokes shell commands directly. It communicates with the loopback Python API.
-
-## M0/M1 component map
+Chromie# is a launcher/control plane, not a TrinityCore fork and not a replacement game client.
 
 ```text
-ChromieSharp.Console (.NET 10)
-        |
-        | JSON / HTTP on loopback
-        v
-chromie_backend (Python stdlib)
+Chromie# Launcher (C# / Avalonia)
+             |
+             | JSON / HTTP on loopback
+             v
+chromie_backend (Python control plane)
+  |-- LauncherService
   |-- WorkbenchLocator
   |-- DatabaseService
-  |-- ServerService ----> server.sh ----> authserver/worldserver
-  |-- ClientService ----> client.sh ----> Wine / Wow.exe
+  |-- ServerService ------> server.sh ------> authserver / worldserver
+  |-- ClientService ------> client.sh ------> Wine / Wow.exe
   `-- DiagnosticsService
 ```
 
-## State semantics
+The C# layer never shells directly into TrinityCore. Python owns process execution, probing, lifecycle policy, repair planning, and future audit enforcement.
 
-Status is evidence-derived. A component may be `missing`, `unreachable`, `stopped`, `ready`, `running`, `exited`, `available`, `configured`, or `unknown`.
+## Launcher state model
 
-A button press or successful HTTP request is never itself proof that a live process is healthy. The caller should request `/api/v1/status` after mutations.
+Chromie# exposes `/api/v1/launcher/status` with an ordered set of gates. Gates have a stable key, human label, status, blocking flag, message, and evidence.
 
-## Live validation gates
+M2 blocking gates are:
 
-The fake Workbench used by tests proves protocol and lifecycle behavior only. It does not pass the live gates for MariaDB, authserver, worldserver, realm queries, X11 authentication, or the ChromieCraft client. Those gates require current runtime evidence.
+1. Workbench mounted.
+2. MariaDB reachable.
+3. ChromieCraft client preflight passes.
+
+Auth/world server state is non-blocking before PLAY because PLAY is responsible for starting them. Wine/DXVK and authenticated X11 are visible but non-blocking until M3 installs strict validators.
+
+If every blocking gate passes, launcher mode is `PLAY`. Otherwise mode is `REPAIR` and the API returns `repair_reasons`.
+
+## PLAY pipeline
+
+1. Re-evaluate launcher gates.
+2. Refuse launch if any blocking gate fails.
+3. Inspect authserver/worldserver state.
+4. Start the private realm when it is not already running.
+5. Launch the client through `client.sh launch`.
+6. Return structured step evidence.
+7. M3 will add strict build/runtime/display/realmlist validation before step 5.
+
+## REPAIR contract
+
+M2 repair is deliberately diagnostic and non-destructive. `/api/v1/launcher/repair` returns an explicit action plan such as Workbench recall, database start, or client verification. Automatic mutation/restore is deferred to M5 and remains owner-controlled.
+
+## Evidence rule
+
+A successful button press, HTTP 200, or fake Workbench test is not proof of a live TrinityCore/ChromieCraft launch. Live gates require current-runtime evidence from the actual Workbench.
