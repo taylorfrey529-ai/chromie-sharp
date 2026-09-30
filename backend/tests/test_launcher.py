@@ -72,6 +72,7 @@ class LauncherTests(unittest.TestCase):
             "STATE=\"$(dirname \"$0\")/running\"\n"
             "case \"$1\" in\n"
             "status) [ -f \"$STATE\" ] && { echo 'authserver running'; echo 'worldserver running'; exit 0; }; echo stopped; exit 3;;\n"
+            "preflight) for d in dbc maps vmaps mmaps; do [ -d \"$(dirname \"$0\")/state/data/$d\" ] || exit 2; done; echo 'preflight=ready'; exit 0;;\n"
             "start|restart) : > \"$STATE\"; echo started;;\n"
             "stop) rm -f \"$STATE\"; echo stopped;;\n"
             "*) exit 64;; esac\n",
@@ -94,6 +95,7 @@ class LauncherTests(unittest.TestCase):
             "case \"$1\" in\n"
             "preflight) echo 'Wine mode: fake'; echo 'Client: Wow.exe'; exit 0;;\n"
             "wine-check) echo 'Wine 32-bit process bootstrap: OK'; exit 0;;\n"
+            "dxvk-check) echo 'DXVK 3.1.1 payload: OK'; exit 0;;\n"
             "configure) printf '%s\\n' 'set realmlist 127.0.0.1' > \"$REALM\"; exit 0;;\n"
             "server-ports) if [ -f \"$STATE\" ]; then echo '127.0.0.1:3724 ready'; echo '127.0.0.1:8085 ready'; exit 0; else echo '127.0.0.1:3724 not listening'; echo '127.0.0.1:8085 not listening'; exit 3; fi;;\n"
             "launch) echo fake-client-launch; exit 0;;\n"
@@ -101,6 +103,10 @@ class LauncherTests(unittest.TestCase):
             encoding="utf-8",
         )
         os.chmod(client, 0o755)
+
+        data = self.root / "state" / "data"
+        for name in ("dbc", "maps", "vmaps", "mmaps"):
+            (data / name).mkdir(parents=True, exist_ok=True)
 
         manifests = self.root / "manifests"
         manifests.mkdir()
@@ -157,13 +163,22 @@ class LauncherTests(unittest.TestCase):
         )
         self.assertTrue((self.root / "running").exists())
 
-    def test_repair_plan_is_non_destructive(self) -> None:
+    def test_stopped_database_is_standby_not_blocking(self) -> None:
         self.db.close()
+        code, payload = self.request("/launcher/status")
+        self.assertEqual(200, code)
+        self.assertTrue(payload["data"]["can_play"])
+        database = next(g for g in payload["data"]["gates"] if g["key"] == "database")
+        self.assertEqual("standby", database["status"])
+        self.assertFalse(database["blocking"])
+
+    def test_repair_plan_flags_missing_server_data_without_mutation(self) -> None:
+        os.rmdir(self.root / "state" / "data" / "mmaps")
         code, payload = self.request("/launcher/repair", "POST")
         self.assertEqual(200, code)
         self.assertTrue(payload["success"])
         actions = payload["data"]["actions"]
-        self.assertIn("start-database", [item["action"] for item in actions])
+        self.assertIn("prepare-server-data", [item["action"] for item in actions])
         self.assertFalse((self.root / "running").exists())
 
     def test_build_mismatch_blocks_play(self) -> None:

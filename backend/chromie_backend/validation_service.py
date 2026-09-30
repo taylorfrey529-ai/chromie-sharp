@@ -63,6 +63,46 @@ class LaunchValidationService:
             failure_code="WINE_BOOTSTRAP_FAILED",
         )
 
+    def dxvk(self) -> OperationResult:
+        return self._client_command(
+            "dxvk-check",
+            timeout=10,
+            success_message="DXVK payload validation passed",
+            failure_code="DXVK_VALIDATION_FAILED",
+        )
+
+    def server_preflight(self) -> OperationResult:
+        script = self.locator.root / "server.sh"
+        if not script.is_file():
+            return OperationResult(
+                False,
+                "SERVER_SCRIPT_MISSING",
+                "server.sh is not available",
+                {"path": str(script)},
+            )
+        try:
+            result = run_checked([script, "preflight"], cwd=self.locator.root, timeout=20)
+        except subprocess.TimeoutExpired as exc:
+            return OperationResult(
+                False,
+                "SERVER_PREFLIGHT_TIMEOUT",
+                "server.sh preflight timed out",
+                {"timeout": exc.timeout},
+            )
+        except OSError as exc:
+            return OperationResult(
+                False,
+                "SERVER_PREFLIGHT_EXEC",
+                str(exc),
+                {"path": str(script)},
+            )
+        return OperationResult(
+            result.returncode == 0,
+            "OK" if result.returncode == 0 else "SERVER_PREFLIGHT_FAILED",
+            "Server runtime/data preflight passed" if result.returncode == 0 else "Server runtime/data preflight failed",
+            result.evidence(),
+        )
+
     def realmlist(self) -> OperationResult:
         locale = self._locale_dir()
         if locale is None:
