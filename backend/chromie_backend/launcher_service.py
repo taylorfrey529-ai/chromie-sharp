@@ -54,6 +54,8 @@ class LauncherService:
         client = self.client.preflight()
         build = self.validator.build_identity()
         runtime = self.validator.runtime_preflight()
+        dxvk = self.validator.dxvk()
+        server_ready = self.validator.server_preflight()
         display = self.validator.display_authentication()
         realmlist = self.validator.realmlist()
 
@@ -69,14 +71,16 @@ class LauncherService:
             LauncherGate(
                 "database",
                 "MariaDB",
-                "pass" if snapshot.database.state == "reachable" else "fail",
-                True,
-                "Database reachable" if snapshot.database.state == "reachable" else "Database is not reachable",
+                "pass" if snapshot.database.state == "reachable" else "standby",
+                False,
+                "Database reachable" if snapshot.database.state == "reachable" else "Database is stopped; PLAY will start it through server.sh",
                 snapshot.database.evidence,
             ),
+            self._gate("server_data", "Server Runtime / Data", server_ready, blocking=True),
             self._gate("client", "ChromieCraft Client", client, blocking=True),
             self._gate("build", "Build 12340", build, blocking=True),
             self._gate("runtime", "Wine Runtime", runtime, blocking=True),
+            self._gate("dxvk", "DXVK", dxvk, blocking=True),
             self._gate("display", "Authenticated Display", display, blocking=True),
             self._gate("realmlist", "Local Realm", realmlist, blocking=False, standby_on_fail=True),
             LauncherGate(
@@ -169,10 +173,11 @@ class LauncherService:
         actions: list[dict[str, str]] = []
         action_map = {
             "workbench": ("recall-workbench", "Restore or mount the verified Workbench bundle."),
-            "database": ("start-database", "Start the local MariaDB service and re-run health checks."),
+            "server_data": ("prepare-server-data", "Complete and validate dbc/maps/vmaps/mmaps plus the prepared database/runtime state."),
             "client": ("verify-client", "Verify client.sh and Wow.exe against the persisted Workbench."),
             "build": ("verify-build-manifest", "Restore or verify the persisted build-12340 runtime manifest."),
-            "runtime": ("repair-runtime", "Repair the Workbench Wine/QEMU runtime before launch."),
+            "runtime": ("repair-runtime", "Repair the Workbench Wine runtime before launch."),
+            "dxvk": ("repair-dxvk", "Restore or verify the Workbench DXVK payload before launch."),
             "display": ("repair-display-auth", "Restore the authenticated X11 display without weakening access control."),
         }
         for reason in current["repair_reasons"]:
