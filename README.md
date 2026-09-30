@@ -22,7 +22,7 @@ M2 introduces the Battle.net-style launcher shell and PLAY/REPAIR lifecycle cont
 - non-destructive repair planning
 - dependency-light console client retained as a diagnostic fallback
 
-M3 adds strict Build 12340 identity, Workbench-native Wine preflight/bootstrap, authenticated X11 positive/negative probes, realmlist validation, and post-start auth/world listener checks. DXVK-specific and genuine current-runtime launch evidence remain pending.
+M3/M3.1 adds strict Build 12340 identity, Workbench-native Wine preflight/bootstrap, DXVK payload validation, authenticated X11 positive/negative probes, realmlist validation, server runtime/data preflight, and post-start auth/world listener checks. A stopped MariaDB is treated as PLAY-managed standby rather than a repair failure. Genuine current-runtime launch evidence remains runtime-specific.
 
 ## Run backend
 
